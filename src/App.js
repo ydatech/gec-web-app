@@ -30,12 +30,24 @@ function App() {
     }
     try {
 
-      const response = await axios.post("http://0.0.0.0:5000/translator/translate", [{
-        src,
-        id: 100
-      }])
+      async function recycling(prevResult) {
+        const response = await axios.post("http://0.0.0.0:5000/translator/translate", [{
+          src: prevResult.tgt,
+          id: 100
+        }])
 
-      setResult(response.data?.[0]?.[0] ?? { tgt: "" })
+        const result = response.data?.[0]?.[0] ?? { tgt: "", pred_score: -100 };
+
+        if (prevResult.pred_score >= result.pred_score) {
+          return prevResult
+        } else {
+          return await recycling(result)
+        }
+      }
+
+      const result = await recycling({ tgt: src, pred_score: -100 })
+
+      setResult(result)
 
     } catch (e) {
       console.log(e.message)
